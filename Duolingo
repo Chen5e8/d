@@ -1,0 +1,80 @@
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.service import Service
+from webdriver_manager.chrome import ChromeDriverManager
+from dotenv import load_dotenv
+import time
+import random
+import os
+
+# Charger les identifiants de l'environnement
+load_dotenv()
+EMAIL = os.getenv("EMAIL")
+PASSWORD = os.getenv("PASSWORD")
+
+# Configuration du navigateur
+options = webdriver.ChromeOptions()
+options.add_argument("--headless")  # Mode invisible (peut être détecté)
+options.add_argument("--disable-blink-features=AutomationControlled")  # Masque Selenium
+options.add_experimental_option("excludeSwitches", ["enable-automation"])
+options.add_experimental_option("useAutomationExtension", False)
+
+# Lancement du navigateur
+driver = webdriver.Chrome(service=Service(ChromeDriverManager().install()), options=options)
+driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")  # Contourner la détection
+
+def login():
+    """Se connecte à Duolingo."""
+    driver.get("https://www.duolingo.com/")
+    time.sleep(random.uniform(3, 5))
+
+    try:
+        login_button = driver.find_element(By.XPATH, "//a[contains(text(),'Se connecter')]")
+        login_button.click()
+        time.sleep(random.uniform(2, 4))
+
+        email_input = driver.find_element(By.NAME, "identifier")
+        email_input.send_keys(EMAIL)
+
+        password_input = driver.find_element(By.NAME, "password")
+        password_input.send_keys(PASSWORD)
+        password_input.send_keys(Keys.RETURN)
+
+        print("[INFO] Connexion réussie !")
+        time.sleep(random.uniform(5, 7))
+    except Exception as e:
+        print(f"[ERREUR] Impossible de se connecter : {e}")
+        driver.quit()
+        exit()
+
+def complete_lesson():
+    """Complète une leçon sur Duolingo."""
+    driver.get("https://www.duolingo.com/lesson")
+    time.sleep(random.uniform(4, 6))
+
+    for _ in range(random.randint(8, 12)):  # Nombre aléatoire d'actions
+        try:
+            buttons = driver.find_elements(By.XPATH, "//button[contains(@class, 'correct')] | //button[@data-test='player-next']")
+            
+            if buttons:
+                random.choice(buttons).click()  # Sélection aléatoire pour simuler un humain
+                print("[INFO] Réponse validée !")
+                time.sleep(random.uniform(3, 6))  # Délai plus réaliste
+            else:
+                print("[INFO] Aucune action possible, sortie de la leçon.")
+                break
+        except Exception as e:
+            print(f"[ERREUR] Problème lors de la leçon : {e}")
+            break
+
+def main():
+    """Exécute le bot de manière continue."""
+    login()
+    while True:
+        complete_lesson()
+        print("+10 XP obtenus ! ✅")
+        time.sleep(random.uniform(60, 90))  # Pause plus longue entre les leçons
+
+if __name__ == "__main__":
+    main()
